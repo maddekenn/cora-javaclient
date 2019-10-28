@@ -55,7 +55,7 @@ public final class RestClientImp implements RestClient {
 		httpHandler.setRequestMethod("GET");
 
 		Status statusType = Response.Status.fromStatusCode(httpHandler.getResponseCode());
-		if (statusType.equals(Response.Status.OK)) {
+		if (statusType == Response.Status.OK) {
 			return httpHandler.getResponseText();
 		}
 		throw new CoraClientException("Could not read record of type: " + recordType + " and id: "
@@ -123,7 +123,7 @@ public final class RestClientImp implements RestClient {
 		httpHandler.setRequestMethod("DELETE");
 
 		Status statusType = Response.Status.fromStatusCode(httpHandler.getResponseCode());
-		if (statusType.equals(Response.Status.OK)) {
+		if (statusType == Response.Status.OK) {
 			return httpHandler.getResponseText();
 		}
 		throw new CoraClientException("Could not delete record of type: " + recordType + " and id: "
@@ -138,7 +138,7 @@ public final class RestClientImp implements RestClient {
 		httpHandler.setRequestMethod("GET");
 
 		Status statusType = Response.Status.fromStatusCode(httpHandler.getResponseCode());
-		if (statusType.equals(Response.Status.OK)) {
+		if (statusType == Response.Status.OK) {
 			return httpHandler.getResponseText();
 		}
 		throw new CoraClientException("Could not read records of type: " + recordType
@@ -151,9 +151,9 @@ public final class RestClientImp implements RestClient {
 		String url = baseUrl + recordType + "/" + recordId + "/incomingLinks";
 		HttpHandler httpHandler = createHttpHandlerWithAuthTokenAndUrl(url);
 		httpHandler.setRequestMethod("GET");
-		Status statusType = Response.Status.fromStatusCode(httpHandler.getResponseCode());
 
-		if (statusType.equals(Response.Status.OK)) {
+		Status statusType = Response.Status.fromStatusCode(httpHandler.getResponseCode());
+		if (statusType == Response.Status.OK) {
 			return httpHandler.getResponseText();
 		}
 		throw new CoraClientException("Could not read incoming links of type: " + recordType
