@@ -20,8 +20,11 @@
 package se.uu.ub.cora.javaclient;
 
 import se.uu.ub.cora.clientdata.ClientDataGroup;
+import se.uu.ub.cora.clientdata.ClientDataRecord;
 import se.uu.ub.cora.clientdata.converter.javatojson.DataToJsonConverter;
 import se.uu.ub.cora.clientdata.converter.javatojson.DataToJsonConverterFactory;
+import se.uu.ub.cora.clientdata.converter.jsontojava.JsonToDataConverterFactory;
+import se.uu.ub.cora.clientdata.converter.jsontojava.JsonToDataRecordConverter;
 import se.uu.ub.cora.javaclient.apptoken.AppTokenClient;
 import se.uu.ub.cora.javaclient.apptoken.AppTokenClientFactory;
 import se.uu.ub.cora.javaclient.cora.CoraClient;
@@ -29,6 +32,10 @@ import se.uu.ub.cora.javaclient.rest.RestClient;
 import se.uu.ub.cora.javaclient.rest.RestClientFactory;
 import se.uu.ub.cora.json.builder.JsonBuilderFactory;
 import se.uu.ub.cora.json.builder.org.OrgJsonBuilderFactoryAdapter;
+import se.uu.ub.cora.json.parser.JsonObject;
+import se.uu.ub.cora.json.parser.JsonParser;
+import se.uu.ub.cora.json.parser.JsonValue;
+import se.uu.ub.cora.json.parser.org.OrgJsonParser;
 
 public class CoraClientImp implements CoraClient {
 
@@ -38,15 +45,15 @@ public class CoraClientImp implements CoraClient {
 	private String userId;
 	private String appToken;
 	private DataToJsonConverterFactory dataToJsonConverterFactory;
+	private JsonToDataConverterFactory jsonToDataConverterFactory;
 
-	public CoraClientImp(AppTokenClientFactory appTokenClientFactory,
-			RestClientFactory restClientFactory,
-			DataToJsonConverterFactory dataToJsonConverterFactory, String userId, String appToken) {
-		this.appTokenClientFactory = appTokenClientFactory;
-		this.restClientFactory = restClientFactory;
-		this.dataToJsonConverterFactory = dataToJsonConverterFactory;
-		this.userId = userId;
-		this.appToken = appToken;
+	public CoraClientImp(CoraClientDependencies coraClientDependencies) {
+		this.appTokenClientFactory = coraClientDependencies.appTokenClientFactory;
+		this.restClientFactory = coraClientDependencies.restClientFactory;
+		this.dataToJsonConverterFactory = coraClientDependencies.dataToJsonConverterFactory;
+		this.jsonToDataConverterFactory = coraClientDependencies.jsonToDataConverterFactory;
+		this.userId = coraClientDependencies.userId;
+		this.appToken = coraClientDependencies.appToken;
 		appTokenClient = appTokenClientFactory.factor(userId, appToken);
 	}
 
@@ -81,6 +88,25 @@ public class CoraClientImp implements CoraClient {
 	public String read(String recordType, String recordId) {
 		RestClient restClient = setUpRestClientWithAuthToken();
 		return restClient.readRecordAsJson(recordType, recordId);
+	}
+
+	@Override
+	public ClientDataRecord readAsDataRecord(String recordType, String recordId) {
+		String readJson = read(recordType, recordId);
+		JsonObject readJsonObject = createJsonObjectFromResponseText(readJson);
+		return convertToDataRecord(readJsonObject);
+	}
+
+	private JsonObject createJsonObjectFromResponseText(String responseText) {
+		JsonParser jsonParser = new OrgJsonParser();
+		JsonValue jsonValue = jsonParser.parseString(responseText);
+		return (JsonObject) jsonValue;
+	}
+
+	private ClientDataRecord convertToDataRecord(JsonObject readJsonObject) {
+		JsonToDataRecordConverter recordConverter = new JsonToDataRecordConverter(readJsonObject,
+				jsonToDataConverterFactory);
+		return recordConverter.toInstance();
 	}
 
 	@Override
@@ -130,5 +156,10 @@ public class CoraClientImp implements CoraClient {
 	public DataToJsonConverterFactory getDataToJsonConverterFactory() {
 		// needed for test
 		return dataToJsonConverterFactory;
+	}
+
+	public JsonToDataConverterFactory getJsonToDataConverterFactory() {
+		// needed for test
+		return jsonToDataConverterFactory;
 	}
 }

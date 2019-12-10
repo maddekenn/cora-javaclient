@@ -20,6 +20,9 @@ package se.uu.ub.cora.javaclient.cora;
 
 import se.uu.ub.cora.clientdata.converter.javatojson.DataToJsonConverterFactory;
 import se.uu.ub.cora.clientdata.converter.javatojson.DataToJsonConverterFactoryImp;
+import se.uu.ub.cora.clientdata.converter.jsontojava.JsonToDataConverterFactory;
+import se.uu.ub.cora.clientdata.converter.jsontojava.JsonToDataConverterFactoryImp;
+import se.uu.ub.cora.javaclient.CoraClientDependencies;
 import se.uu.ub.cora.javaclient.CoraClientImp;
 import se.uu.ub.cora.javaclient.apptoken.AppTokenClientFactoryImp;
 import se.uu.ub.cora.javaclient.rest.RestClientFactoryImp;
@@ -46,8 +49,12 @@ public final class CoraClientFactoryImp implements CoraClientFactory {
 	@Override
 	public CoraClient factor(String userId, String appToken) {
 		DataToJsonConverterFactory dataToJsonConverterFactory = new DataToJsonConverterFactoryImp();
-		return new CoraClientImp(appTokenClientFactory, restClientFactory,
-				dataToJsonConverterFactory, userId, appToken);
+		JsonToDataConverterFactory jsonToDataConverterFactory = new JsonToDataConverterFactoryImp();
+		CoraClientDependencies coraClientDependencies = new CoraClientDependencies(
+				appTokenClientFactory, restClientFactory, dataToJsonConverterFactory,
+				jsonToDataConverterFactory, userId, appToken);
+
+		return new CoraClientImp(coraClientDependencies);
 	}
 
 	public String getAppTokenVerifierUrl() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018, 2019 Uppsala University Library
+ * Copyright 2019 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -16,26 +16,20 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.javaclient.cora;
+package se.uu.ub.cora.javaclient;
 
+import se.uu.ub.cora.clientdata.ClientDataElement;
 import se.uu.ub.cora.clientdata.ClientDataGroup;
-import se.uu.ub.cora.clientdata.ClientDataRecord;
+import se.uu.ub.cora.clientdata.converter.jsontojava.JsonToDataConverter;
 
-public interface CoraClient {
-	String create(String recordType, String json);
+public class JsonToDataConverterSpy implements JsonToDataConverter {
 
-	String create(String recordType, ClientDataGroup dataGroup);
+	public ClientDataGroup dataGroup;
 
-	String read(String recordType, String recordId);
-
-	String update(String recordType, String recordId, String json);
-
-	String delete(String recordType, String recordId);
-
-	String readList(String recordType);
-
-	String readIncomingLinks(String recordType, String recordId);
-
-	ClientDataRecord readAsDataRecord(String recordType, String recordId);
+	@Override
+	public ClientDataElement toInstance() {
+		dataGroup = ClientDataGroup.withNameInData("someSpyNameInData");
+		return dataGroup;
+	}
 
 }

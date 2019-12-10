@@ -19,6 +19,7 @@
 package se.uu.ub.cora.javaclient;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
@@ -26,12 +27,14 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import se.uu.ub.cora.clientdata.ClientDataGroup;
+import se.uu.ub.cora.clientdata.ClientDataRecord;
 import se.uu.ub.cora.javaclient.cora.CoraClient;
 import se.uu.ub.cora.javaclient.cora.CoraClientException;
 import se.uu.ub.cora.javaclient.doubles.AppTokenClientFactorySpy;
 import se.uu.ub.cora.javaclient.doubles.RestClientFactorySpy;
 import se.uu.ub.cora.javaclient.doubles.RestClientSpy;
 import se.uu.ub.cora.json.builder.org.OrgJsonBuilderFactoryAdapter;
+import se.uu.ub.cora.json.parser.JsonObject;
 
 public class CoraClientTest {
 	private CoraClient coraClient;
@@ -40,14 +43,18 @@ public class CoraClientTest {
 	private String userId = "someUserId";
 	private String appToken = "someAppToken";
 	private DataToJsonConverterFactorySpy dataToJsonConverterFactory;
+	private JsonToDataConverterFactorySpy jsonToDataConverterFactory;
 
 	@BeforeMethod
 	public void BeforeMethod() {
 		restClientFactory = new RestClientFactorySpy();
 		appTokenClientFactory = new AppTokenClientFactorySpy();
 		dataToJsonConverterFactory = new DataToJsonConverterFactorySpy();
-		coraClient = new CoraClientImp(appTokenClientFactory, restClientFactory,
-				dataToJsonConverterFactory, userId, appToken);
+		jsonToDataConverterFactory = new JsonToDataConverterFactorySpy();
+		CoraClientDependencies coraClientDependencies = new CoraClientDependencies(
+				appTokenClientFactory, restClientFactory, dataToJsonConverterFactory,
+				jsonToDataConverterFactory, userId, appToken);
+		coraClient = new CoraClientImp(coraClientDependencies);
 	}
 
 	@Test
@@ -61,11 +68,18 @@ public class CoraClientTest {
 
 	@Test(expectedExceptions = CoraClientException.class)
 	public void testInitErrorWithAuthToken() throws Exception {
-		CoraClientImp coraClient = new CoraClientImp(appTokenClientFactory, restClientFactory,
-				dataToJsonConverterFactory, AppTokenClientFactorySpy.THIS_USER_ID_TRIGGERS_AN_ERROR,
-				appToken);
+		CoraClientDependencies coraClientDependencies = setUpDependenciesWithErrorInUserId();
+		CoraClientImp coraClient = new CoraClientImp(coraClientDependencies);
 		String json = "some fake json";
 		coraClient.create("someType", json);
+	}
+
+	private CoraClientDependencies setUpDependenciesWithErrorInUserId() {
+		CoraClientDependencies coraClientDependencies = new CoraClientDependencies(
+				appTokenClientFactory, restClientFactory, dataToJsonConverterFactory,
+				jsonToDataConverterFactory, AppTokenClientFactorySpy.THIS_USER_ID_TRIGGERS_AN_ERROR,
+				appToken);
+		return coraClientDependencies;
 	}
 
 	@Test
@@ -84,6 +98,39 @@ public class CoraClientTest {
 	@Test(expectedExceptions = CoraClientException.class)
 	public void testReadError() throws Exception {
 		coraClient.read(RestClientSpy.THIS_RECORD_TYPE_TRIGGERS_AN_ERROR, "someRecordId");
+	}
+
+	@Test
+	public void testReadAsDataRecord() {
+		ClientDataRecord dataRecord = coraClient
+				.readAsDataRecord("someRecordTypeToBeReturnedAsDataGroup", "someRecordId");
+		assertNotNull(dataRecord);
+
+		assertCorrectFactoredRestClient();
+		assertTrue(jsonToDataConverterFactory.createForJsonObjectWasCalled);
+
+		JsonObject jsonSentToConverterFactory = (JsonObject) jsonToDataConverterFactory.jsonValue;
+		String dataGroupPartOfRecordJson = jsonSentToConverterFactory.toJsonFormattedString();
+
+		String dataGroupPartOfRecord = getExpectedDataGroupJson();
+		assertEquals(dataGroupPartOfRecordJson, dataGroupPartOfRecord);
+
+		ClientDataGroup clientDataGroupInRecord = dataRecord.getClientDataGroup();
+		ClientDataGroup dataGroupReturnedFromConverter = jsonToDataConverterFactory.factoredConverter.dataGroup;
+		assertSame(clientDataGroupInRecord, dataGroupReturnedFromConverter);
+
+	}
+
+	private void assertCorrectFactoredRestClient() {
+		RestClientSpy restClient = restClientFactory.factored.get(0);
+		assertEquals(restClientFactory.factored.size(), 1);
+		assertEquals(restClientFactory.usedAuthToken, "someAuthTokenFromSpy");
+		assertEquals(restClient.recordType, "someRecordTypeToBeReturnedAsDataGroup");
+		assertEquals(restClient.recordId, "someRecordId");
+	}
+
+	private String getExpectedDataGroupJson() {
+		return "{\"children\":[{\"name\":\"nameInData\",\"value\":\"historicCountry\"},{\"children\":[{\"name\":\"id\",\"value\":\"historicCountryCollection\"},{\"children\":[{\"name\":\"linkedRecordType\",\"value\":\"recordType\"},{\"name\":\"linkedRecordId\",\"value\":\"metadataItemCollection\"}],\"name\":\"type\"}],\"name\":\"recordInfo\"},{\"children\":[{\"repeatId\":\"0\",\"children\":[{\"name\":\"linkedRecordType\",\"value\":\"genericCollectionItem\"},{\"name\":\"linkedRecordId\",\"value\":\"gaulHistoricCountryItem\"}],\"name\":\"ref\"},{\"repeatId\":\"1\",\"children\":[{\"name\":\"linkedRecordType\",\"value\":\"genericCollectionItem\"},{\"name\":\"linkedRecordId\",\"value\":\"britainHistoricCountryItem\"}],\"name\":\"ref\"}],\"name\":\"collectionItemReferences\"}],\"name\":\"metadata\",\"attributes\":{\"type\":\"itemCollection\"}}";
 	}
 
 	@Test

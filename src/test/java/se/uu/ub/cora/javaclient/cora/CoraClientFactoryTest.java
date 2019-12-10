@@ -26,6 +26,8 @@ import org.testng.annotations.Test;
 
 import se.uu.ub.cora.clientdata.converter.javatojson.DataToJsonConverterFactory;
 import se.uu.ub.cora.clientdata.converter.javatojson.DataToJsonConverterFactoryImp;
+import se.uu.ub.cora.clientdata.converter.jsontojava.JsonToDataConverterFactory;
+import se.uu.ub.cora.clientdata.converter.jsontojava.JsonToDataConverterFactoryImp;
 import se.uu.ub.cora.javaclient.CoraClientImp;
 import se.uu.ub.cora.javaclient.apptoken.AppTokenClientFactoryImp;
 import se.uu.ub.cora.javaclient.rest.RestClientFactoryImp;
@@ -59,6 +61,10 @@ public class CoraClientFactoryTest {
 		DataToJsonConverterFactory dataToJsonConverterFactory = coraClient
 				.getDataToJsonConverterFactory();
 		assertTrue(dataToJsonConverterFactory instanceof DataToJsonConverterFactoryImp);
+
+		JsonToDataConverterFactory jsonToDataConverterFactory = coraClient
+				.getJsonToDataConverterFactory();
+		assertTrue(jsonToDataConverterFactory instanceof JsonToDataConverterFactoryImp);
 	}
 
 	@Test
