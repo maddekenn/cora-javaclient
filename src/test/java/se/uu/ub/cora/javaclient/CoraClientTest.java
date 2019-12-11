@@ -154,18 +154,18 @@ public class CoraClientTest {
 		String json = "some fake json";
 		String createdJson = coraClient.create("someType", json);
 
-		assertCorrectDataSentToRestClient(json, createdJson);
+		assertCorrectDataSentToRestClient(json, createdJson, "create");
 	}
 
 	private void assertCorrectDataSentToRestClient(String jsonSentToRestClient,
-			String jsonReturnedFromCreate) {
+			String jsonReturnedFromCreate, String methodCalled) {
 		RestClientSpy restClient = restClientFactory.factored.get(0);
 		assertEquals(restClientFactory.factored.size(), 1);
 		assertEquals(restClientFactory.usedAuthToken, "someAuthTokenFromSpy");
 		assertEquals(restClient.recordType, "someType");
 		assertEquals(restClient.json, jsonSentToRestClient);
 		assertEquals(jsonReturnedFromCreate, restClient.returnedAnswer + restClient.methodCalled);
-		assertEquals(restClient.methodCalled, "create");
+		assertEquals(restClient.methodCalled, methodCalled);
 	}
 
 	@Test(expectedExceptions = CoraClientException.class)
@@ -184,7 +184,7 @@ public class CoraClientTest {
 		assertSame(dataToJsonConverterFactory.clientDataElement, dataGroup);
 		String jsonReturnedFromConverter = dataToJsonConverterFactory.converterSpy.jsonToReturnFromSpy;
 
-		assertCorrectDataSentToRestClient(jsonReturnedFromConverter, createdJson);
+		assertCorrectDataSentToRestClient(jsonReturnedFromConverter, createdJson, "create");
 
 	}
 
@@ -200,6 +200,20 @@ public class CoraClientTest {
 		assertEquals(restClient.json, json);
 		assertEquals(updatedJson, restClient.returnedAnswer + restClient.methodCalled);
 		assertEquals(restClient.methodCalled, "update");
+	}
+
+	@Test
+	public void testUpdateFromClientDataGroup() throws Exception {
+		ClientDataGroup dataGroup = ClientDataGroup.withNameInData("someDataGroup");
+
+		String updatedJson = coraClient.update("someType", "someId", dataGroup);
+
+		assertTrue(dataToJsonConverterFactory.factory instanceof OrgJsonBuilderFactoryAdapter);
+		assertSame(dataToJsonConverterFactory.clientDataElement, dataGroup);
+		String jsonReturnedFromConverter = dataToJsonConverterFactory.converterSpy.jsonToReturnFromSpy;
+
+		assertCorrectDataSentToRestClient(jsonReturnedFromConverter, updatedJson, "update");
+
 	}
 
 	@Test(expectedExceptions = CoraClientException.class)

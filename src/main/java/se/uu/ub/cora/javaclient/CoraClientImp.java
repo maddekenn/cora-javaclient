@@ -162,4 +162,10 @@ public class CoraClientImp implements CoraClient {
 		// needed for test
 		return jsonToDataConverterFactory;
 	}
+
+	@Override
+	public String update(String recordType, String recordId, ClientDataGroup dataGroup) {
+		String json = convertDataGroupToJson(dataGroup);
+		return update(recordType, recordId, json);
+	}
 }

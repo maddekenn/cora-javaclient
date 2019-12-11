@@ -38,4 +38,6 @@ public interface CoraClient {
 
 	ClientDataRecord readAsDataRecord(String recordType, String recordId);
 
+	String update(String recordType, String recordId, ClientDataGroup dataGroup);
+
 }
